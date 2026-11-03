@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 364 72" fill="none">
+  <title>FPT Lost &amp; Found</title>
+  <g transform="translate(0 4)">
+    <path d="M28 12H18a6 6 0 0 0-6 6v22a6 6 0 0 0 6 6h16a6 6 0 0 0 6-6V30" stroke="#172D3B" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M36 52h10a6 6 0 0 0 6-6V24a6 6 0 0 0-6-6H30a6 6 0 0 0-6 6v10" stroke="#EA580C" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="84" y="25" fill="#EA580C" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" letter-spacing="2.2">FPT CAMPUS</text>
+  <text x="82" y="54" fill="#172D3B" font-family="Inter, Arial, sans-serif" font-size="29" font-weight="700" letter-spacing="-1">Lost &amp; Found</text>
+</svg>

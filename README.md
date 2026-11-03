@@ -14,10 +14,21 @@ Posts appear immediately. Administrators can hide or restore posts afterward; ow
 
 1. Create a Supabase project. Apply the SQL files in supabase/migrations in filename order using the SQL editor (or link the Supabase CLI and run supabase db push). Apply supabase/seed.sql afterward for categories and locations. Do not put the private schema in the API's exposed schemas.
 2. In Auth settings, enable email/password signup and email confirmation; set minimum password length to 8. Set the Site URL to http://localhost:5173 and allow http://localhost:5173/auth/callback and http://localhost:5173/reset-password as redirect URLs. Use your actual origin if the dev port changes. Production redirect URLs must be configured before deployment.
-3. Configure email delivery for confirmation and recovery. The hosted project's default mail service has delivery/rate restrictions; use configured SMTP for real users.
+3. Configure custom SMTP for confirmation and recovery before inviting real users. Supabase's default mail service sends only to project team addresses and currently allows only two messages per hour; other addresses may be rejected or hit the rate limit. Configure a sender domain and SMTP credentials in Authentication → SMTP Settings, then check Authentication → Logs for failed `/signup` requests. A successful new signup shows “Đã gửi email xác nhận”; repeated signups never claim a new email was sent.
 4. Copy .env.example to .env.local. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to the project URL and its publishable/anon key. These frontend keys are public; database and storage permissions protect data. Never use a secret or service-role key in a VITE_ variable.
 5. Run npm install, then npm run dev. Restart the frontend after changing environment variables.
 6. Register and confirm an account. Bootstrap the first admin once in the SQL editor with: update public.profiles set role = 'admin' where id = '<confirmed auth user UUID>'; Subsequent role changes use the admin Accounts tab. The last admin cannot be demoted through the app.
+
+### Optional Google and Facebook sign-in
+
+The login and signup pages show social sign-in buttons when their providers are enabled in the connected Supabase project. Email/password login remains available.
+
+1. In Supabase **Authentication → URL Configuration**, add `http://localhost:5173/auth/callback` to Redirect URLs. Add the deployed app's `/auth/callback` URL before going live. The existing Site URL should match the app origin.
+2. For Google, create a Google Cloud OAuth consent screen and web client. Add `https://<project-ref>.supabase.co/auth/v1/callback` as an authorized redirect URI in Google Cloud. Enter its Client ID and Client Secret in **Supabase Authentication → Sign In / Providers → Google**, then enable the provider.
+3. For Facebook, create a Meta developer app with Facebook Login and access to the user's email. Add the same Supabase `/auth/v1/callback` URL to the Facebook Login valid OAuth redirect URIs. Enter its App ID and App Secret in **Supabase Authentication → Sign In / Providers → Facebook**, then enable the provider. Configure the Meta app for public use before inviting users who are not app testers.
+4. Try both providers with a real account. A successful social login creates a regular `member` profile and returns the user to the page they opened. Keep OAuth secrets in the provider dashboards, never in `.env.local` or frontend code.
+
+Google and Facebook configuration instructions: [Supabase Google guide](https://supabase.com/docs/guides/auth/social-sign-in/auth-google) and [Supabase Facebook guide](https://supabase.com/docs/guides/auth/social-sign-in/auth-facebook).
 
 Without configuration the app displays a setup message. No localStorage demo fallback is used.
 
@@ -58,6 +69,14 @@ Reports and reference data are fetched in batches to avoid silently truncating t
 Existing browser demo data is not automatically imported.
 
 ## Validation
+
+### First-visit onboarding
+
+After login and profile resolution, first-time visitors see a three-step Vietnamese guide at `/onboarding`: introduction, reporting, and verified item returns. The guide uses the SVG assets in `public/brand`, supports skipping and back navigation, and preserves the original destination (including query parameters and hash). The final step also offers direct links to lost/found report creation.
+
+Completion is stored per account and onboarding version in browser localStorage. It is a device-local preference, not a database field, so a new browser/device shows the guide again. A session fallback allows continuing when localStorage is blocked. Members and admins can replay the guide from Account → “Xem lại hướng dẫn sử dụng”. Onboarding is behind the existing authentication guard and does not require a database migration.
+
+### Checks
 
 - npm run typecheck — TypeScript checks.
 - npm run build — production bundle.

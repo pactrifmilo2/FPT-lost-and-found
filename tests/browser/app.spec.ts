@@ -196,16 +196,58 @@ async function backend(
   });
   return state;
 }
-async function login(page: Page) {
+async function login(page: Page, skipOnboarding = true) {
   await page.goto("/items");
   await page.getByLabel("Email").fill("member@example.test");
   await page.getByLabel("Mật khẩu").fill("password123");
   await page.getByRole("button", { name: "Đăng nhập" }).click();
+  await expect(page).toHaveURL(/\/onboarding\?/);
+  if (!skipOnboarding) return;
+  await page.getByRole("button", { name: "Bỏ qua hướng dẫn" }).click();
   await expect(page).toHaveURL(/\/items$/);
   await expect(
     page.getByRole("heading", { name: "Đồ thất lạc", exact: true }),
   ).toBeVisible();
 }
+test("onboarding guides new users, works on mobile, and can be replayed", async ({
+  page,
+}) => {
+  await backend(page);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await login(page, false);
+  await expect(page.getByRole("heading")).toContainText("Đồ thất lạc.");
+  await page.screenshot({
+    path: "test-results/onboarding-desktop.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: "test-results/onboarding-mobile.png",
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Tiếp tục" }).click();
+  await expect(page.getByRole("heading")).toContainText("Một tin đăng.");
+  await page.getByRole("button", { name: "Quay lại" }).click();
+  await page.getByRole("button", { name: "Tiếp tục" }).click();
+  await page.getByRole("button", { name: "Tiếp tục" }).click();
+  await expect(page.getByRole("heading")).toContainText("Đúng món đồ.");
+  await page.getByRole("button", { name: "Bắt đầu sử dụng" }).click();
+  await expect(page).toHaveURL(/\/items$/);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Đồ thất lạc", exact: true }),
+  ).toBeVisible();
+  await page.goto("/account");
+  await page.getByRole("link", { name: "Xem lại hướng dẫn sử dụng" }).click();
+  await expect(page.getByRole("heading")).toContainText("Đồ thất lạc.");
+  await page.getByRole("button", { name: "Bỏ qua hướng dẫn" }).click();
+  await expect(page).toHaveURL(/\/account$/);
+});
 async function fillFound(page: Page) {
   await page.goto("/report-found");
   await page.locator("#itemName").fill("Bình nước mới");
@@ -330,16 +372,14 @@ test("signed images refresh before expiry and can be removed after saving", asyn
   const state = await backend(page);
   await login(page);
   await fillFound(page);
-  await page
-    .locator("input[type=file]")
-    .setInputFiles({
-      name: "test.png",
-      mimeType: "image/png",
-      buffer: Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j2WQAAAAASUVORK5CYII=",
-        "base64",
-      ),
-    });
+  await page.locator("input[type=file]").setInputFiles({
+    name: "test.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j2WQAAAAASUVORK5CYII=",
+      "base64",
+    ),
+  });
   await page.getByRole("button", { name: "Gửi tin nhặt được" }).click();
   const image = page.getByRole("img", { name: "Bình nước mới" });
   await expect(image).toBeVisible();

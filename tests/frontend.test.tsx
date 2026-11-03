@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { RequireAuth, RequireRole } from "@/components/RequireRole";
 import { AuthPage } from "@/pages/AuthPage";
 import { getProfile } from "@/lib/api/profiles";
+import { getOAuthProviders } from "@/lib/api/authProviders";
 import { findMatches, effectiveStatus } from "@/lib/matching";
 import { fetchAll } from "@/lib/api/pagination";
 import { validateImage, MAX_IMAGE_BYTES } from "@/lib/api/storage";
@@ -17,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   callback: undefined as
     undefined | ((event: string, session: Session | null) => void),
   signIn: vi.fn(),
+  social: vi.fn(),
   signUp: vi.fn(),
   reset: vi.fn(),
   update: vi.fn(),
@@ -31,6 +33,7 @@ vi.mock("@/lib/supabase", () => ({
       getSession: vi.fn(async () => ({ data: { session: null }, error: null })),
       signOut: vi.fn(async () => ({ error: null })),
       signInWithPassword: mocks.signIn,
+      signInWithOAuth: mocks.social,
       signUp: mocks.signUp,
       resetPasswordForEmail: mocks.reset,
       updateUser: mocks.update,
@@ -38,6 +41,7 @@ vi.mock("@/lib/supabase", () => ({
   },
 }));
 vi.mock("@/lib/api/profiles", () => ({ getProfile: vi.fn() }));
+vi.mock("@/lib/api/authProviders", () => ({ getOAuthProviders: vi.fn() }));
 const session = (id: string) =>
   ({ user: { id, email: `${id}@example.test` } }) as Session;
 function Probe() {
@@ -65,7 +69,15 @@ function mount(
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.signIn.mockResolvedValue({ error: null });
-  mocks.signUp.mockResolvedValue({ error: null });
+  mocks.social.mockResolvedValue({ error: null });
+  vi.mocked(getOAuthProviders).mockResolvedValue({
+    google: false,
+    facebook: false,
+  });
+  mocks.signUp.mockResolvedValue({
+    data: { user: { identities: [{ provider: "email" }] } },
+    error: null,
+  });
   mocks.reset.mockResolvedValue({ error: null });
   mocks.update.mockResolvedValue({ error: null });
   vi.mocked(getProfile).mockImplementation(async (id) => ({
@@ -76,6 +88,45 @@ beforeEach(() => {
   }));
 });
 describe("auth boundaries", () => {
+  it("offers enabled social providers and preserves the requested destination", async () => {
+    vi.mocked(getOAuthProviders).mockResolvedValue({
+      google: true,
+      facebook: true,
+    });
+    mount(
+      <Routes>
+        <Route
+          path="/items"
+          element={
+            <RequireAuth>
+              <p>items-content</p>
+            </RequireAuth>
+          }
+        />
+        <Route path="/login" element={<AuthPage mode="login" />} />
+      </Routes>,
+      "/items?q=balo",
+    );
+    act(() => mocks.callback!("INITIAL_SESSION", null));
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Tiếp tục với Google" }),
+    );
+    expect(mocks.social).toHaveBeenCalledWith({
+      provider: "google",
+      options: {
+        redirectTo: expect.stringMatching(
+          /\/auth\/callback\?next=%2Fitems%3Fq%3Dbalo$/,
+        ),
+      },
+    });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục với Facebook" }),
+    );
+    expect(mocks.social).toHaveBeenLastCalledWith({
+      provider: "facebook",
+      options: { redirectTo: expect.any(String) },
+    });
+  });
   it("waits for profile and clears private caches when accounts switch or sign out", async () => {
     const { client } = mount(<Probe />);
     act(() => mocks.callback!("INITIAL_SESSION", null));
@@ -138,7 +189,45 @@ describe("auth boundaries", () => {
         }),
       ),
     );
-    expect(await screen.findByText(/Kiểm tra hộp thư/)).toBeTruthy();
+    expect(await screen.findByText(/Đã gửi email xác nhận/)).toBeTruthy();
+  });
+  it("does not claim an email was sent for a repeated signup", async () => {
+    mocks.signUp.mockResolvedValue({
+      data: { user: { identities: [] } },
+      error: null,
+    });
+    mount(<AuthPage mode="signup" />, "/signup");
+    act(() => mocks.callback!("INITIAL_SESSION", null));
+    await userEvent.type(screen.getByLabelText(/Họ và tên/), "Bạn");
+    await userEvent.type(screen.getByLabelText(/Email/), "again@example.test");
+    await userEvent.type(screen.getByLabelText(/Mật khẩu/), "password123");
+    await userEvent.click(screen.getByRole("button", { name: "Đăng ký" }));
+    expect(
+      await screen.findByText(/Không có email xác nhận mới được gửi/),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Đã gửi email xác nhận/)).toBeNull();
+  });
+  it("explains when email sending is rate limited", async () => {
+    mocks.signUp.mockResolvedValue({
+      data: { user: null },
+      error: {
+        code: "over_email_send_rate_limit",
+        status: 429,
+        message: "email rate limit exceeded",
+      },
+    });
+    mount(<AuthPage mode="signup" />, "/signup");
+    act(() => mocks.callback!("INITIAL_SESSION", null));
+    await userEvent.type(screen.getByLabelText(/Họ và tên/), "Bạn");
+    await userEvent.type(
+      screen.getByLabelText(/Email/),
+      "limited@example.test",
+    );
+    await userEvent.type(screen.getByLabelText(/Mật khẩu/), "password123");
+    await userEvent.click(screen.getByRole("button", { name: "Đăng ký" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(
+      /Chưa có email xác nhận nào được gửi/,
+    );
   });
   it("recovery updates the password only after a recovery session", async () => {
     mount(

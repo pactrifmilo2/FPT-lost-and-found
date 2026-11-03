@@ -16,6 +16,8 @@ import { AdminPage } from "@/pages/AdminPage";
 import { AuthPage } from "@/pages/AuthPage";
 import { EditReportPage } from "@/pages/EditReportPage";
 import { AccountPage } from "@/pages/AccountPage";
+import { OnboardingPage } from "@/pages/OnboardingPage";
+import { OnboardingGate } from "@/components/OnboardingGate";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 30_000, refetchOnWindowFocus: true },
@@ -40,11 +42,21 @@ export default function App() {
           <Route path="/reset-password" element={<AuthPage mode="reset" />} />
           <Route path="/auth/callback" element={<AuthPage mode="callback" />} />
           <Route
+            path="/onboarding"
             element={
               <RequireAuth>
-                <DataProvider>
-                  <Layout />
-                </DataProvider>
+                <OnboardingPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            element={
+              <RequireAuth>
+                <OnboardingGate>
+                  <DataProvider>
+                    <Layout />
+                  </DataProvider>
+                </OnboardingGate>
               </RequireAuth>
             }
           >

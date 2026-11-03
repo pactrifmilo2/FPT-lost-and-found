@@ -39,10 +39,14 @@ export function errorMessage(error: unknown): string {
     return "Vui lòng xác nhận email trước khi đăng nhập.";
   if (e?.code === "user_already_exists")
     return "Email đã được đăng ký. Vui lòng đăng nhập hoặc khôi phục mật khẩu.";
+  if (e?.code === "email_address_not_authorized")
+    return "Dịch vụ email hiện chưa cho phép gửi đến địa chỉ này. Vui lòng liên hệ quản trị viên.";
+  if (e?.code === "over_email_send_rate_limit")
+    return "Hệ thống đã đạt giới hạn gửi email. Chưa có email xác nhận nào được gửi; vui lòng thử lại sau hoặc liên hệ quản trị viên.";
   if (e?.code === "weak_password")
     return "Mật khẩu chưa đủ mạnh. Hãy dùng ít nhất 8 ký tự.";
-  if (/rate.limit|too many/i.test(message))
-    return "Bạn đã thử quá nhiều lần. Vui lòng thử lại sau.";
+  if (e?.status === 429 || /rate.limit|too many/i.test(message))
+    return "Đã đạt giới hạn yêu cầu. Vui lòng thử lại sau.";
   if (e?.code?.startsWith("22") || e?.code === "23502" || e?.code === "23514")
     return "Thông tin chưa hợp lệ. Vui lòng kiểm tra các trường bắt buộc.";
   return "Không thể hoàn tất thao tác. Kiểm tra kết nối và thử lại.";

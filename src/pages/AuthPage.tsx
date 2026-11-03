@@ -1,8 +1,14 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import type { Provider } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import {
+  getOAuthProviders,
+  type OAuthProviders,
+} from "@/lib/api/authProviders";
 import { useAuth } from "@/lib/auth";
 import { errorMessage } from "@/lib/errors";
+import { onboardingDestination } from "@/lib/onboarding";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 type Mode = "login" | "signup" | "forgot" | "reset" | "callback";
@@ -22,14 +28,26 @@ export function AuthPage({ mode }: { mode: Mode }) {
     [name, setName] = useState("");
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState(""),
+    [messageKind, setMessageKind] = useState<"success" | "info">("info");
+  const [providers, setProviders] = useState<OAuthProviders>({
+    google: false,
+    facebook: false,
+  });
   const rawFrom = (location.state as { from?: string } | null)?.from;
-  const from =
-    rawFrom?.startsWith("/") &&
-    !rawFrom.startsWith("//") &&
-    !rawFrom.includes("\\")
-      ? rawFrom
-      : "/";
+  const from = onboardingDestination(
+    mode === "callback"
+      ? new URLSearchParams(location.search).get("next")
+      : (rawFrom ?? null),
+  );
+  useEffect(() => {
+    if (mode !== "login" && mode !== "signup") return;
+    const controller = new AbortController();
+    void getOAuthProviders(controller.signal)
+      .then((enabled) => setProviders(enabled))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [mode]);
   if (
     auth.session &&
     auth.profile &&
@@ -43,6 +61,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
     setBusy(true);
     setError("");
     setMessage("");
+    setMessageKind("info");
     try {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({
@@ -51,7 +70,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
         });
         if (error) throw error;
       } else if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
@@ -60,15 +79,27 @@ export function AuthPage({ mode }: { mode: Mode }) {
           },
         });
         if (error) throw error;
-        setMessage(
-          "Nếu email có thể đăng ký, bạn sẽ nhận được thư xác nhận. Kiểm tra hộp thư trước khi đăng nhập.",
-        );
+        if (
+          data.user?.identities?.some(
+            (identity) => identity.provider === "email",
+          )
+        ) {
+          setMessageKind("success");
+          setMessage(
+            "Đã gửi email xác nhận. Hãy kiểm tra hộp thư và thư rác trước khi đăng nhập.",
+          );
+        } else {
+          setMessage(
+            "Không có email xác nhận mới được gửi. Nếu bạn đã có tài khoản, hãy đăng nhập hoặc khôi phục mật khẩu.",
+          );
+        }
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(
           email.trim(),
           { redirectTo: `${window.location.origin}/reset-password` },
         );
         if (error) throw error;
+        setMessageKind("info");
         setMessage(
           "Nếu tài khoản tồn tại, hướng dẫn khôi phục sẽ được gửi đến email của bạn.",
         );
@@ -79,6 +110,24 @@ export function AuthPage({ mode }: { mode: Mode }) {
         auth.finishRecovery();
         navigate("/", { replace: true });
       }
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function socialSignIn(provider: Provider) {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const callback = new URL("/auth/callback", window.location.origin);
+      callback.searchParams.set("next", from);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: callback.toString() },
+      });
+      if (error) throw error;
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -107,7 +156,10 @@ export function AuthPage({ mode }: { mode: Mode }) {
           </p>
         )}
         {message && (
-          <p role="status" className="text-sm text-green-700">
+          <p
+            role="status"
+            className={`text-sm ${messageKind === "success" ? "text-green-700" : "text-slate-700"}`}
+          >
             {message}
           </p>
         )}
@@ -171,6 +223,64 @@ export function AuthPage({ mode }: { mode: Mode }) {
             </Button>
           </form>
         )}
+        {(mode === "login" || mode === "signup") &&
+          (providers.google || providers.facebook) && (
+            <div className="space-y-3 border-t border-slate-200 pt-5">
+              <p className="text-center text-xs text-slate-500">
+                Hoặc tiếp tục bằng
+              </p>
+              <div className="grid gap-2">
+                {providers.google && (
+                  <button
+                    type="button"
+                    disabled={busy || auth.loading}
+                    onClick={() => void socialSignIn("google")}
+                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        fill="#4285F4"
+                        d="M21.35 12.25c0-.68-.06-1.18-.2-1.7H12v3.3h5.37a4.6 4.6 0 0 1-2 3.02v2.5h3.22c1.89-1.75 2.76-4.32 2.76-7.12Z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 21.5c2.7 0 4.97-.89 6.63-2.41l-3.22-2.5c-.9.6-2.04.96-3.41.96a6.13 6.13 0 0 1-5.76-4.25H2.92v2.58A10 10 0 0 0 12 21.5Z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M6.24 13.3a6.06 6.06 0 0 1 0-3.6V7.12H2.92a10 10 0 0 0 0 8.76l3.32-2.58Z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 6.45c1.47 0 2.79.5 3.83 1.5l2.87-2.88A9.52 9.52 0 0 0 12 2.5a10 10 0 0 0-9.08 5.62l3.32 2.58A6.13 6.13 0 0 1 12 6.45Z"
+                      />
+                    </svg>
+                    Tiếp tục với Google
+                  </button>
+                )}
+                {providers.facebook && (
+                  <button
+                    type="button"
+                    disabled={busy || auth.loading}
+                    onClick={() => void socialSignIn("facebook")}
+                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1877F2] font-bold text-white"
+                    >
+                      f
+                    </span>
+                    Tiếp tục với Facebook
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         <div className="flex flex-wrap gap-4 text-sm text-brand-700">
           <Link to="/login">Đăng nhập</Link>
           <Link to="/signup">Đăng ký</Link>

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { useAction } from "@/lib/data";
 import { updateName } from "@/lib/api/profiles";
@@ -34,6 +35,14 @@ export function AccountPage() {
       )}
       {saved && <p role="status">Đã lưu tên.</p>}
       <Button disabled={action.busy}>Lưu</Button>
+      <div className="border-t border-slate-100 pt-4">
+        <Link
+          to="/onboarding?next=%2Faccount"
+          className="text-sm font-medium text-brand-700 hover:underline"
+        >
+          Xem lại hướng dẫn sử dụng →
+        </Link>
+      </div>
     </form>
   );
 }

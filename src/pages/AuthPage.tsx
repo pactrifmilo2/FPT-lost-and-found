@@ -223,66 +223,62 @@ export function AuthPage({ mode }: { mode: Mode }) {
             </Button>
           </form>
         )}
-        {(mode === "login" || mode === "signup") &&
-          (providers.google || providers.facebook) && (
-            <div className="space-y-3 border-t border-slate-200 pt-5">
-              <p className="text-center text-xs text-slate-500">
-                Hoặc tiếp tục bằng
-              </p>
-              <div className="grid gap-2">
-                {providers.google && (
-                  <button
-                    type="button"
-                    disabled={busy || auth.loading}
-                    onClick={() => void socialSignIn("google")}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                  >
-                    <svg
-                      aria-hidden="true"
-                      className="h-5 w-5"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        fill="#4285F4"
-                        d="M21.35 12.25c0-.68-.06-1.18-.2-1.7H12v3.3h5.37a4.6 4.6 0 0 1-2 3.02v2.5h3.22c1.89-1.75 2.76-4.32 2.76-7.12Z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 21.5c2.7 0 4.97-.89 6.63-2.41l-3.22-2.5c-.9.6-2.04.96-3.41.96a6.13 6.13 0 0 1-5.76-4.25H2.92v2.58A10 10 0 0 0 12 21.5Z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M6.24 13.3a6.06 6.06 0 0 1 0-3.6V7.12H2.92a10 10 0 0 0 0 8.76l3.32-2.58Z"
-                      />
-                      <path
-                        fill="#EA4335"
-                        d="M12 6.45c1.47 0 2.79.5 3.83 1.5l2.87-2.88A9.52 9.52 0 0 0 12 2.5a10 10 0 0 0-9.08 5.62l3.32 2.58A6.13 6.13 0 0 1 12 6.45Z"
-                      />
-                    </svg>
-                    Tiếp tục với Google
-                  </button>
-                )}
-                {providers.facebook && (
-                  <button
-                    type="button"
-                    disabled={busy || auth.loading}
-                    onClick={() => void socialSignIn("facebook")}
-                    className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1877F2] font-bold text-white"
-                    >
-                      f
-                    </span>
-                    Tiếp tục với Facebook
-                  </button>
-                )}
-              </div>
+        {(mode === "login" || mode === "signup") && (
+          <div className="space-y-3 border-t border-slate-200 pt-5">
+            <p className="text-center text-xs text-slate-500">
+              Hoặc tiếp tục bằng
+            </p>
+            <div className="grid gap-2">
+              <button
+                type="button"
+                disabled={!providers.google || busy || auth.loading}
+                onClick={() => void socialSignIn("google")}
+                className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M21.35 12.25c0-.68-.06-1.18-.2-1.7H12v3.3h5.37a4.6 4.6 0 0 1-2 3.02v2.5h3.22c1.89-1.75 2.76-4.32 2.76-7.12Z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 21.5c2.7 0 4.97-.89 6.63-2.41l-3.22-2.5c-.9.6-2.04.96-3.41.96a6.13 6.13 0 0 1-5.76-4.25H2.92v2.58A10 10 0 0 0 12 21.5Z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M6.24 13.3a6.06 6.06 0 0 1 0-3.6V7.12H2.92a10 10 0 0 0 0 8.76l3.32-2.58Z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 6.45c1.47 0 2.79.5 3.83 1.5l2.87-2.88A9.52 9.52 0 0 0 12 2.5a10 10 0 0 0-9.08 5.62l3.32 2.58A6.13 6.13 0 0 1 12 6.45Z"
+                  />
+                </svg>
+                Tiếp tục với Google
+              </button>
+              <button
+                type="button"
+                disabled={!providers.facebook || busy || auth.loading}
+                onClick={() => void socialSignIn("facebook")}
+                className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1877F2] font-bold text-white"
+                >
+                  f
+                </span>
+                Tiếp tục với Facebook
+              </button>
             </div>
-          )}
+            {(!providers.google || !providers.facebook) && (
+              <p className="text-center text-xs text-slate-600">
+                Một số phương thức đăng nhập hiện chưa khả dụng.
+              </p>
+            )}
+          </div>
+        )}
         <div className="flex flex-wrap gap-4 text-sm text-brand-700">
-          <Link to="/login">Đăng nhập</Link>
+          {mode !== "login" && <Link to="/login">Đăng nhập</Link>}
           <Link to="/signup">Đăng ký</Link>
           <Link to="/forgot-password">Quên mật khẩu?</Link>
         </div>

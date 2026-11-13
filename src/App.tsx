@@ -18,6 +18,7 @@ import { EditReportPage } from "@/pages/EditReportPage";
 import { AccountPage } from "@/pages/AccountPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
 import { OnboardingGate } from "@/components/OnboardingGate";
+import { AdminMfaGate } from "@/components/AdminMfaGate";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 30_000, refetchOnWindowFocus: true },
@@ -52,11 +53,13 @@ export default function App() {
           <Route
             element={
               <RequireAuth>
-                <OnboardingGate>
-                  <DataProvider>
-                    <Layout />
-                  </DataProvider>
-                </OnboardingGate>
+                <AdminMfaGate>
+                  <OnboardingGate>
+                    <DataProvider>
+                      <Layout />
+                    </DataProvider>
+                  </OnboardingGate>
+                </AdminMfaGate>
               </RequireAuth>
             }
           >

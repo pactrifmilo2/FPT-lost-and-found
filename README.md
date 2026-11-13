@@ -1,4 +1,4 @@
-# FPT Lost & Found
+# Lost & Found
 
 Vietnamese campus lost-and-found application built with React, TypeScript, Supabase and TanStack Query.
 
@@ -17,7 +17,7 @@ Posts appear immediately. Administrators can hide or restore posts afterward; ow
 3. Configure custom SMTP for confirmation and recovery before inviting real users. Supabase's default mail service sends only to project team addresses and currently allows only two messages per hour; other addresses may be rejected or hit the rate limit. Configure a sender domain and SMTP credentials in Authentication → SMTP Settings, then check Authentication → Logs for failed `/signup` requests. A successful new signup shows “Đã gửi email xác nhận”; repeated signups never claim a new email was sent.
 4. Copy .env.example to .env.local. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to the project URL and its publishable/anon key. These frontend keys are public; database and storage permissions protect data. Never use a secret or service-role key in a VITE_ variable.
 5. Run npm install, then npm run dev. Restart the frontend after changing environment variables.
-6. Register and confirm an account. Bootstrap the first admin once in the SQL editor with: update public.profiles set role = 'admin' where id = '<confirmed auth user UUID>'; Subsequent role changes use the admin Accounts tab. The last admin cannot be demoted through the app.
+6. Register and confirm an account. Bootstrap the first admin once in the SQL editor with: update public.profiles set role = 'admin' where id = '<confirmed auth user UUID>'. On the next app sign-in, set up two-step verification with an authenticator app. Administrator access in the database requires a verified second factor. Subsequent role changes use the admin Accounts tab. The last admin cannot be demoted through the app.
 
 ### Optional Google and Facebook sign-in
 

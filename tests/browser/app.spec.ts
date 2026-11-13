@@ -32,7 +32,12 @@ async function backend(
   {
     role = "member",
     failSave = false,
-  }: { role?: "member" | "admin"; failSave?: boolean } = {},
+    adminNeedsMfa = false,
+  }: {
+    role?: "member" | "admin";
+    failSave?: boolean;
+    adminNeedsMfa?: boolean;
+  } = {},
 ) {
   const state = {
     reports: [
@@ -65,13 +70,21 @@ async function backend(
     sub: id,
     aud: "authenticated",
     role: "authenticated",
+    aal: role === "admin" && !adminNeedsMfa ? "aal2" : "aal1",
     exp: Math.floor(Date.now() / 1000) + 3600,
   };
-  const token =
+  const tokenFor = (aal: string) =>
     Buffer.from('{"alg":"HS256","typ":"JWT"}').toString("base64url") +
     "." +
-    Buffer.from(JSON.stringify(payload)).toString("base64url") +
+    Buffer.from(JSON.stringify({ ...payload, aal })).toString("base64url") +
     ".test";
+  const sessionFor = (aal: string) => ({
+    access_token: tokenFor(aal),
+    token_type: "bearer",
+    expires_in: 3600,
+    refresh_token: "test-refresh",
+    user,
+  });
   await page.route("http://127.0.0.1:54399/**", async (route) => {
     const request = route.request(),
       url = new URL(request.url()),
@@ -90,14 +103,20 @@ async function backend(
       });
     if (request.method() === "OPTIONS")
       return route.fulfill({ status: 204, headers });
-    if (path === "/auth/v1/token")
+    if (path === "/auth/v1/token") return json(sessionFor(payload.aal));
+    if (adminNeedsMfa && path === "/auth/v1/factors")
       return json({
-        access_token: token,
-        token_type: "bearer",
-        expires_in: 3600,
-        refresh_token: "test-refresh",
-        user,
+        id: "test-totp",
+        type: "totp",
+        totp: {
+          qr_code:
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24"/></svg>',
+        },
       });
+    if (adminNeedsMfa && path === "/auth/v1/factors/test-totp/challenge")
+      return json({ id: "test-challenge" });
+    if (adminNeedsMfa && path === "/auth/v1/factors/test-totp/verify")
+      return json(sessionFor("aal2"));
     if (path === "/auth/v1/user") return json(user);
     if (path === "/auth/v1/logout") return json({});
     if (path === "/rest/v1/profiles") {
@@ -209,6 +228,25 @@ async function login(page: Page, skipOnboarding = true) {
     page.getByRole("heading", { name: "Đồ thất lạc", exact: true }),
   ).toBeVisible();
 }
+test("an admin must verify a code before entering the application", async ({
+  page,
+}) => {
+  await backend(page, { role: "admin", adminNeedsMfa: true });
+  await page.goto("/items");
+  await page.getByLabel("Email").fill("admin@example.test");
+  await page.getByLabel("Mật khẩu").fill("password123");
+  await page.getByRole("button", { name: "Đăng nhập" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Xác thực hai bước" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Tạo mã QR" }).click();
+  await expect(
+    page.getByRole("img", { name: "Mã QR thiết lập xác thực hai bước" }),
+  ).toBeVisible();
+  await page.getByLabel("Mã từ ứng dụng xác thực").fill("123456");
+  await page.getByRole("button", { name: "Xác minh" }).click();
+  await expect(page).toHaveURL(/\/onboarding\?/);
+});
 test("onboarding guides new users, works on mobile, and can be replayed", async ({
   page,
 }) => {

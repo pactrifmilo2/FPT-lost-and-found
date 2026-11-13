@@ -12,6 +12,9 @@ create table auth.users(id uuid primary key, email text unique, raw_user_meta_da
 create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true),'')::uuid;
 $$;
+create function auth.jwt() returns jsonb language sql stable as $$
+  select coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb, '{}'::jsonb);
+$$;
 grant usage on schema auth to anon, authenticated, service_role;
 grant execute on function auth.uid() to anon, authenticated, service_role;
 create schema storage;
@@ -66,10 +69,19 @@ export async function seedUsers(db) {
     users.admin,
   ]);
 }
-export async function asUser(db, id, sql, args = []) {
+export async function asUser(
+  db,
+  id,
+  sql,
+  args = [],
+  aal = id === users.admin ? "aal2" : "aal1",
+) {
   await db.exec("begin; set local role authenticated");
   try {
     await db.query(`select set_config('request.jwt.claim.sub',$1,true)`, [id]);
+    await db.query(`select set_config('request.jwt.claims',$1,true)`, [
+      JSON.stringify({ aal }),
+    ]);
     const result = await db.query(sql, args);
     await db.exec("commit");
     return result;

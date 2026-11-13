@@ -87,19 +87,52 @@ test("lost report private details are only available to its author and admins", 
     distinguishing_characteristics: "Private marking",
   });
   await assert.rejects(
-    act("second", "select contact_preference, distinguishing_characteristics from reports where id=$1", [report.id]),
+    act(
+      "second",
+      "select contact_preference, distinguishing_characteristics from reports where id=$1",
+      [report.id],
+    ),
     /permission denied/,
   );
-  assert.equal((await act("second", "select id from reports where id=$1", [report.id])).rows.length, 1);
+  assert.equal(
+    (await act("second", "select id from reports where id=$1", [report.id]))
+      .rows.length,
+    1,
+  );
   const details = (user) =>
     act(user, "select * from get_lost_report_details($1)", [report.id]);
   assert.deepEqual((await details("second")).rows, []);
   for (const user of ["member", "admin"]) {
-    assert.deepEqual((await details(user)).rows, [{
-      contact_preference: "private@example.test",
-      distinguishing_characteristics: "Private marking",
-    }]);
+    assert.deepEqual((await details(user)).rows, [
+      {
+        contact_preference: "private@example.test",
+        distinguishing_characteristics: "Private marking",
+      },
+    ]);
   }
+});
+test("an admin with a password-only session retains their own profile but no elevated access", async () => {
+  const report = await makeReport("member", "lost");
+  const passwordOnly = (sql, args) =>
+    asUser(db, users.admin, sql, args, "aal1");
+  const profiles = (await passwordOnly("select id, role from profiles")).rows;
+  assert.deepEqual(profiles, [{ id: users.admin, role: "admin" }]);
+  assert.deepEqual(
+    (await passwordOnly("select * from report_private")).rows,
+    [],
+  );
+  assert.deepEqual(
+    (
+      await passwordOnly("select * from get_lost_report_details($1)", [
+        report.id,
+      ])
+    ).rows,
+    [],
+  );
+  await assert.rejects(
+    passwordOnly("select set_user_role($1,'admin')", [users.second]),
+    /FORBIDDEN/,
+  );
 });
 test("report/private creation is atomic; protected fields and privacy enforced", async () => {
   const count = (await db.query("select count(*) from reports")).rows[0].count;

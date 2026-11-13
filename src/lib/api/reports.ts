@@ -3,13 +3,16 @@ import { fetchAll } from "./pagination";
 import { mapReport } from "./rows";
 import type { Json } from "../database.types";
 import type { Report } from "@/types";
+const reportColumns =
+  "id,kind,item_name,category_id,description,date,time,location_id,building,floor_room,image_path,reporter_id,reporter_name,created_at,updated_at,status,current_holder,moderation_status,moderated_by,moderated_at,moderation_reason";
+
 export async function getReports(signal: AbortSignal) {
   return (
     await fetchAll(
       (from, to) =>
         supabase
           .from("reports")
-          .select("*")
+          .select(reportColumns)
           .order("created_at", { ascending: false })
           .order("id")
           .range(from, to)
@@ -17,6 +20,14 @@ export async function getReports(signal: AbortSignal) {
       signal,
     )
   ).map(mapReport);
+}
+export async function getLostReportDetails(id: string, signal: AbortSignal) {
+  const { data, error } = await supabase
+    .rpc("get_lost_report_details", { p_id: id })
+    .abortSignal(signal)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
 }
 export async function createReport(
   id: string,

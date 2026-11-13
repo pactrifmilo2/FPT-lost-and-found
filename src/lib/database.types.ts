@@ -216,6 +216,10 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      get_lost_report_details: {
+        Args: { p_id: string };
+        Returns: { contact_preference: string; distinguishing_characteristics: string }[];
+      };
       create_report: {
         Args: { p_id: string; p_data: Json; p_private_info?: string };
         Returns: Database["public"]["Tables"]["reports"]["Row"];

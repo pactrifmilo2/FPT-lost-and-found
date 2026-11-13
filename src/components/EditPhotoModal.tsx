@@ -117,7 +117,7 @@ export function EditPhotoModal({
           </Button>
         </div>
         <p className="text-xs text-slate-500">
-          JPEG, PNG hoặc WebP, tối đa 5 MB.
+          JPEG, PNG hoặc WebP, tối đa 5 MB. Che số thẻ sinh viên, giấy tờ và thông tin cá nhân trước khi tải.
         </p>
         {(error || action.error) && (
           <p role="alert" className="text-sm text-red-700">

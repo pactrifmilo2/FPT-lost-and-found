@@ -10,8 +10,13 @@ export function Layout() {
         <Outlet />
       </main>
       <footer className="border-t border-slate-200 bg-white py-6">
-        <div className="mx-auto max-w-6xl px-4 text-center text-xs text-slate-400 sm:px-6">
-          {FOOTER.note}
+        <div className="mx-auto max-w-6xl space-y-2 px-4 text-center text-xs text-slate-600 sm:px-6">
+          <p>{FOOTER.note}</p>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+            <a className="underline" href="/privacy.html">Quyền riêng tư</a>
+            <a className="underline" href="/data-deletion.html">Yêu cầu xóa dữ liệu</a>
+            <a className="underline" href="/third-party-licenses.txt">Giấy phép thư viện</a>
+          </div>
         </div>
       </footer>
     </div>

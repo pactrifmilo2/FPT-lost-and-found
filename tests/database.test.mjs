@@ -81,6 +81,26 @@ test("signup ignores forged role; profiles and references are isolated", async (
     /AUTH_REQUIRED/,
   );
 });
+test("lost report private details are only available to its author and admins", async () => {
+  const report = await makeReport("member", "lost", {
+    contact_preference: "private@example.test",
+    distinguishing_characteristics: "Private marking",
+  });
+  await assert.rejects(
+    act("second", "select contact_preference, distinguishing_characteristics from reports where id=$1", [report.id]),
+    /permission denied/,
+  );
+  assert.equal((await act("second", "select id from reports where id=$1", [report.id])).rows.length, 1);
+  const details = (user) =>
+    act(user, "select * from get_lost_report_details($1)", [report.id]);
+  assert.deepEqual((await details("second")).rows, []);
+  for (const user of ["member", "admin"]) {
+    assert.deepEqual((await details(user)).rows, [{
+      contact_preference: "private@example.test",
+      distinguishing_characteristics: "Private marking",
+    }]);
+  }
+});
 test("report/private creation is atomic; protected fields and privacy enforced", async () => {
   const count = (await db.query("select count(*) from reports")).rows[0].count;
   await assert.rejects(
@@ -149,12 +169,12 @@ test("moderation hides posts from others, edits cannot restore; stale writes fai
     )
   ).rows[0];
   assert.equal(
-    (await act("second", "select * from reports where id=$1", [r.id])).rows
+    (await act("second", "select id from reports where id=$1", [r.id])).rows
       .length,
     0,
   );
   assert.equal(
-    (await act("member", "select * from reports where id=$1", [r.id])).rows
+    (await act("member", "select id from reports where id=$1", [r.id])).rows
       .length,
     1,
   );
@@ -374,7 +394,7 @@ test("hidden reports preserve claimant tracking but are excluded from new claims
     fresh.updated_at,
   ]);
   assert.equal(
-    (await act("second", "select * from reports where id=$1", [found.id])).rows
+    (await act("second", "select id from reports where id=$1", [found.id])).rows
       .length,
     1,
   );

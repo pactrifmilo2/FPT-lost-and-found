@@ -201,20 +201,16 @@ export function ItemDetailPage() {
 
               {report.kind === "lost" ? (
                 <section className="rounded-xl bg-slate-50 p-4">
-                  <h2 className="text-sm font-semibold text-slate-900">
-                    {T.distinguishing}
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-600">
-                    {report.distinguishingCharacteristics}
-                  </p>
-                  <div className="mt-3 flex items-center gap-2 border-t border-slate-200 pt-3 text-sm text-slate-600">
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
                     <User className="h-4 w-4 text-slate-400" />
                     <span>
                       {T.reportedBy}{" "}
-                      <span className="font-medium">{report.reporterName}</span>{" "}
-                      · {report.contactPreference}
+                      <span className="font-medium">{report.reporterName}</span>
                     </span>
                   </div>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Nếu tìm thấy món đồ, hãy đăng tin đồ nhặt được để người mất gửi yêu cầu nhận lại.
+                  </p>
                 </section>
               ) : (
                 <section>

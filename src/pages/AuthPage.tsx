@@ -285,6 +285,11 @@ export function AuthPage({ mode }: { mode: Mode }) {
           <Link to="/signup">Đăng ký</Link>
           <Link to="/forgot-password">Quên mật khẩu?</Link>
         </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-2 border-t border-slate-200 pt-4 text-xs text-slate-600">
+          <a className="underline" href="/privacy.html">Quyền riêng tư</a>
+          <a className="underline" href="/data-deletion.html">Yêu cầu xóa dữ liệu</a>
+          <a className="underline" href="/third-party-licenses.txt">Giấy phép thư viện</a>
+        </div>
       </div>
     </div>
   );

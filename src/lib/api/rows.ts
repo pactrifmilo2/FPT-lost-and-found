@@ -7,7 +7,9 @@ export const mapProfile = (r: Row<"profiles">): Profile => ({
   role: r.role as Profile["role"],
   createdAt: r.created_at,
 });
-export function mapReport(r: Row<"reports">): Report {
+export function mapReport(
+  r: Omit<Row<"reports">, "contact_preference" | "distinguishing_characteristics">,
+): Report {
   const base = {
     id: r.id,
     itemName: r.item_name,
@@ -32,8 +34,8 @@ export function mapReport(r: Row<"reports">): Report {
     ? {
         ...base,
         kind: "lost",
-        distinguishingCharacteristics: r.distinguishing_characteristics,
-        contactPreference: r.contact_preference,
+        distinguishingCharacteristics: "",
+        contactPreference: "",
         status: r.status as LostReport["status"],
       }
     : {

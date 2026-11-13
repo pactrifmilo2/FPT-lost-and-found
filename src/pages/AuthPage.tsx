@@ -141,10 +141,13 @@ export function AuthPage({ mode }: { mode: Mode }) {
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-12">
       <Link
         to="/"
-        className="mb-6 text-center text-2xl font-extrabold text-brand-700"
+        className="text-center text-2xl font-extrabold text-brand-700"
       >
-        FPT Lost &amp; Found
+        Lost &amp; Found
       </Link>
+      <p className="mb-6 mt-2 text-center text-sm text-slate-600">
+        Dự án của nhóm sinh viên tại Hòa Lạc
+      </p>
       <div className="card space-y-5 p-6">
         <h1 className="text-xl font-bold">{titles[mode]}</h1>
         {!!(error || callbackError || auth.error) && (

@@ -57,7 +57,7 @@ export const HEADER = {
 
 export const FOOTER = {
   note:
-    'FPT Lost & Found · Kết nối cộng đồng FPT Campus. Yêu cầu nhận đồ được quản trị viên xác minh trước khi bàn giao.',
+    'Lost & Found là dự án của nhóm sinh viên tại Hòa Lạc. Quản trị viên xác minh yêu cầu nhận đồ trước khi bàn giao.',
 } as const;
 
 export const STATUS_LABEL = {
@@ -99,7 +99,7 @@ export function formatMatchReason(reason: MatchReason): string {
 }
 
 export const HOME = {
-  badge: 'Đồ thất lạc FPT Campus',
+  badge: 'Đồ thất lạc tại Hòa Lạc',
   title: 'Bạn làm mất đồ trên campus? Chúng tôi giúp bạn tìm lại.',
   subtitle:
     'Báo mất đồ, tiếp nhận đồ nhặt được, và để hệ thống ghép nối giúp chủ nhân nhận lại đồ của mình — tất cả trong một nơi.',
@@ -198,7 +198,7 @@ export const REPORT_FORM = {
   contact: 'Cách liên hệ mong muốn',
   contactRequired: 'Chúng tôi nên liên hệ với bạn bằng cách nào?',
   contactHint: 'Chúng tôi nên liên hệ với bạn thế nào nếu có kết quả trùng khớp?',
-  contactPlaceholder: 'ví dụ: Email: ban@fpt.edu.vn hoặc 09xx xxx xxx',
+  contactPlaceholder: 'ví dụ: ban@example.com hoặc 09xx xxx xxx',
   foundDetails: 'Thông tin đồ nhặt được',
   foundDetailsHint: 'Hiện món đồ đang ở đâu, và chủ sở hữu chứng minh thế nào?',
   currentHolder: 'Người đang giữ',

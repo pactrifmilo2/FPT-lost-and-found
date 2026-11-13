@@ -34,9 +34,8 @@ export function Header() {
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-sm">
             <PackageSearch className="h-5 w-5" />
           </span>
-          <span className="text-sm font-extrabold tracking-tight text-slate-900 sm:text-[17px]">
-            FPT{" "}
-            <span className="text-brand-600">Lost&nbsp;&amp;&nbsp;Found</span>
+          <span className="text-sm font-extrabold tracking-tight text-brand-600 sm:text-[17px]">
+            Lost&nbsp;&amp;&nbsp;Found
           </span>
         </Link>
 

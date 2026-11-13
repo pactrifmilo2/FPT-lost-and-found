@@ -22,7 +22,7 @@ const steps = [
     description:
       "Một nơi để tìm đồ thất lạc, đăng đồ nhặt được và giúp những món đồ trở về đúng người.",
     points: [
-      "Tìm kiếm đồ trong khuôn viên FPT",
+      "Tìm đồ thất lạc trong khuôn viên trường",
       "Kết nối thông qua tin mất và tin nhặt được",
       "Theo dõi yêu cầu nhận lại đồ tại một nơi",
     ],
@@ -91,7 +91,7 @@ function Illustration({ step }: { step: number }) {
               <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700">
                 Tin mất đồ
               </span>
-              <span className="text-xs text-slate-400">FPT Campus</span>
+              <span className="text-xs text-slate-500">Hòa Lạc</span>
             </div>
             <div className="my-6 flex h-28 items-center justify-center rounded-2xl bg-[#FAF9F5]">
               <img src="/brand/mark.svg" alt="" className="h-20 w-20" />
@@ -188,7 +188,7 @@ export function OnboardingPage() {
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-6 sm:px-8">
         <img
           src="/brand/logo.svg"
-          alt="FPT Campus Lost & Found"
+          alt="Lost & Found"
           className="w-40 sm:w-60"
         />
         <button
@@ -224,9 +224,6 @@ export function OnboardingPage() {
         </ol>
         <div className="grid overflow-hidden rounded-[2rem] border border-slate-200 bg-white md:min-h-[560px] md:grid-cols-2">
           <section className="flex flex-col justify-center px-6 py-9 sm:px-10 lg:p-14">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-brand-600">
-              Bắt đầu cùng FPT Lost & Found
-            </p>
             <h1
               ref={heading}
               tabIndex={-1}
